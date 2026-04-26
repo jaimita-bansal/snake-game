@@ -32,6 +32,34 @@ h1 {
   font-size: 0.95rem;
 }
 
+.celebration {
+  margin: 0;
+  min-height: 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #7c3aed;
+  opacity: 0;
+}
+
+.celebration.show {
+  animation: levelUpBurst 1.2s ease-out forwards;
+}
+
+@keyframes levelUpBurst {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(1);
+  }
+}
+
 #game-canvas {
   border: 2px solid #18181b;
   background: #fafafa;

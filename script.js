@@ -11,6 +11,7 @@ const context = canvas.getContext("2d");
 const scoreText = document.getElementById("score");
 const levelText = document.getElementById("level");
 const statusText = document.getElementById("status");
+const celebrationText = document.getElementById("celebration");
 const playButton = document.getElementById("play-button");
 const pauseButton = document.getElementById("pause-button");
 const restartButton = document.getElementById("restart-button");
@@ -20,6 +21,8 @@ const gridSize = 20;
 const cellSize = canvas.width / gridSize;
 const shadowTrailTtlTicks = 8;
 const maxShadowTrailLength = 40;
+const confettiTtlTicks = 14;
+const confettiBurstCount = 24;
 
 const directionVectors = {
   ArrowUp: { x: 0, y: -1 },
@@ -42,6 +45,8 @@ let currentTickMs;
 let obstacles;
 let isShadowMode = false;
 let shadowTrail = [];
+let celebrationTimeoutId;
+let confettiParticles = [];
 
 function placeFood() {
   const nextFood = findRandomEmptyCell({
@@ -53,7 +58,7 @@ function placeFood() {
     stopGameLoop();
     isGameOver = true;
     isPaused = false;
-    statusText.textContent = "You Win";
+    statusText.textContent = `You Win! You reached Level ${currentLevel}`;
     pauseButton.disabled = true;
     return false;
   }
@@ -91,12 +96,75 @@ function resetState() {
   score = 0;
   obstacles = [];
   shadowTrail = [];
+  confettiParticles = [];
   scoreText.textContent = "Score: 0";
   applyLevel(LEVELS[0]);
   statusText.textContent = "Press Play to start";
   pauseButton.disabled = true;
+  clearCelebration();
   placeFood();
   updateShadowButtonText();
+}
+
+function clearCelebration() {
+  if (celebrationTimeoutId) {
+    clearTimeout(celebrationTimeoutId);
+    celebrationTimeoutId = null;
+  }
+  celebrationText.textContent = "";
+  celebrationText.classList.remove("show");
+}
+
+function showLevelUpCelebration(level) {
+  clearCelebration();
+  celebrationText.textContent = `Nice! You reached Level ${level}!`;
+  celebrationText.classList.add("show");
+  spawnConfettiBurst();
+  celebrationTimeoutId = setTimeout(() => {
+    celebrationText.classList.remove("show");
+    celebrationText.textContent = "";
+    celebrationTimeoutId = null;
+  }, 1300);
+}
+
+function spawnConfettiBurst() {
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+
+  confettiParticles = [];
+  for (let i = 0; i < confettiBurstCount; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1.2 + Math.random() * 2.4;
+    confettiParticles.push({
+      x: centerX,
+      y: centerY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      ttl: confettiTtlTicks,
+      size: 3 + Math.random() * 3,
+      hue: 240 + Math.random() * 120,
+    });
+  }
+}
+
+function updateConfetti() {
+  confettiParticles = confettiParticles
+    .map((particle) => ({
+      ...particle,
+      x: particle.x + particle.vx,
+      y: particle.y + particle.vy,
+      vy: particle.vy + 0.08,
+      ttl: particle.ttl - 1,
+    }))
+    .filter((particle) => particle.ttl > 0);
+}
+
+function drawConfetti() {
+  confettiParticles.forEach((particle) => {
+    const alpha = Math.max(0, particle.ttl / confettiTtlTicks);
+    context.fillStyle = `hsla(${particle.hue}, 85%, 58%, ${alpha})`;
+    context.fillRect(particle.x, particle.y, particle.size, particle.size);
+  });
 }
 
 function drawCell(cell, color) {
@@ -152,6 +220,7 @@ function draw() {
 
   obstacles.forEach((block) => drawCell(block, "#52525b"));
   shadowTrail.forEach((entry) => drawShadowCell(entry));
+  drawConfetti();
   drawCell(food, "#dc2626");
   snake.forEach((segment, index) => {
     drawCell(segment, index === 0 ? "#16a34a" : "#22c55e");
@@ -179,6 +248,7 @@ function stopGameLoop() {
 
 function step() {
   ageShadowTrail();
+  updateConfetti();
   direction = pendingDirection;
 
   const head = snake[0];
@@ -191,7 +261,7 @@ function step() {
     stopGameLoop();
     isGameOver = true;
     isPaused = false;
-    statusText.textContent = "Game Over";
+    statusText.textContent = `Game Over - You reached Level ${currentLevel}`;
     pauseButton.disabled = true;
     return;
   }
@@ -206,6 +276,7 @@ function step() {
     const resolvedLevel = getLevelByScore(score, LEVELS);
     if (resolvedLevel.level !== currentLevel) {
       applyLevel(resolvedLevel);
+      showLevelUpCelebration(resolvedLevel.level);
 
       if (gameLoopId) {
         stopGameLoop();
