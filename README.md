@@ -1,6 +1,6 @@
 # Snake Game
 
-[![CI and Deploy](https://github.com/<your-username>/<your-repo>/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/<your-username>/<your-repo>/actions/workflows/ci-cd.yml)
+[![CI and Deploy](https://github.com/jaimita-bansal/snake-game/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/jaimita-bansal/snake-game/actions/workflows/ci-cd.yml)
 
 Small browser Snake game built with plain HTML/CSS/JavaScript.
 
